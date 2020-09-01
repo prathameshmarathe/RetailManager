@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using DesktopUI.Library.Models;
 using DesktopUI.Models;
 
@@ -8,5 +9,6 @@ namespace DesktopUI.Library.Api
     {
         Task<AuthenticatedUser> Authenticate(string username, string password);
         Task GetLoggedInUserInfo(string token);
+        HttpClient ApiClient { get; }
     }
 }
