@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using DesktopUI.Library.Api;
+using DesktopUI.Library.Helpers;
 using DesktopUI.Library.Models;
 using System;
 using System.Collections.Concurrent;
@@ -14,9 +15,11 @@ namespace DesktopUI.ViewModels
     public class SalesViewModel:Screen
     {
         IProductEndPoint _productEndPoint;
-        public SalesViewModel(IProductEndPoint productEndPoint)
+        IConfigHelper _configHelper;
+        public SalesViewModel(IProductEndPoint productEndPoint,IConfigHelper configHelper)
         {
             _productEndPoint = productEndPoint;
+            _configHelper = configHelper;
            
 
         }
@@ -71,26 +74,54 @@ namespace DesktopUI.ViewModels
         {
             get
             {
-                decimal subTotal = 0;
-                foreach (var item in Cart)
-                {
-                    subTotal +=(item.QuantityInCart)*(item.Product.RetailPrice);
-                }
-                return subTotal.ToString("C");
+                 
+                return CalculateSubTotal().ToString("C");
             }
             
             //get { return "$0.00"; }
         }
+        private decimal CalculateSubTotal()
+        {
+            decimal subTotal = 0;
+            foreach (var item in Cart)
+            {
+                subTotal += (item.QuantityInCart) * (item.Product.RetailPrice);
+            }
+            return subTotal;
+        }
+
+        private decimal CalculateTax()
+        {
+            decimal taxAmount = 0;
+            decimal taxRate = _configHelper.GetTaxRate()/100;
+            foreach (var item in Cart)
+            {
+                if (item.Product.IsTaxable)
+                {
+                    taxAmount += (item.QuantityInCart * item.Product.RetailPrice * taxRate);
+                }
+            }
+            return taxAmount;
+        }
 
         public string Tax
         {
-           
-            get { return "$0.00"; }
+            get
+            {
+                return CalculateTax().ToString("C");
+            }
+
+            
         }
         public string Total
         {
             //TODO - Relace by Calculation
-            get { return "$0.00"; }
+            get
+            {
+                decimal total = CalculateSubTotal() + CalculateTax();
+                return total.ToString("C");
+            }
+            
         }
 
 
@@ -129,7 +160,9 @@ namespace DesktopUI.ViewModels
             SelectedProduct.QuantityInStock -= ItemQuantity;
             ItemQuantity = 1;
             NotifyOfPropertyChange(()=> SubTotal);
-      
+            NotifyOfPropertyChange(() => Tax);
+            NotifyOfPropertyChange(() => Total);
+
         }
 
         public bool CanAddToCart
@@ -150,7 +183,9 @@ namespace DesktopUI.ViewModels
 
         public void RemoveFromCart()
         {
-            NotifyOfPropertyChange(() => SubTotal); 
+            NotifyOfPropertyChange(() => SubTotal);
+            NotifyOfPropertyChange(() => Tax);
+            NotifyOfPropertyChange(() => Total);
         }
 
         public bool CanRemoveFromCart
