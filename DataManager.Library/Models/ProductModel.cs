@@ -9,7 +9,7 @@ namespace DataManager.Library.Models
     public class ProductModel
     {
         //id, ProductName, [Description],RetailPrice,QuantityInStock
-        public int MyProperty { get; set; }
+        public int Id { get; set; }
 
         public string ProductName { get; set; }
 

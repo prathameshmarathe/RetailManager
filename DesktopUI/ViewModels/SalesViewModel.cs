@@ -16,11 +16,14 @@ namespace DesktopUI.ViewModels
     {
         IProductEndPoint _productEndPoint;
         IConfigHelper _configHelper;
-        public SalesViewModel(IProductEndPoint productEndPoint,IConfigHelper configHelper)
+        ISaleEndpoint _saleEndPoint;
+        public SalesViewModel(IProductEndPoint productEndPoint,ISaleEndpoint saleEndpoint,IConfigHelper configHelper)
         {
             _productEndPoint = productEndPoint;
             _configHelper = configHelper;
-           
+            _saleEndPoint = saleEndpoint;
+
+
 
         }
         protected override async void OnViewLoaded(object view)
@@ -94,7 +97,7 @@ namespace DesktopUI.ViewModels
         {
             decimal taxAmount = 0;
             decimal taxRate = _configHelper.GetTaxRate()/100;
-            Cart.Where(x => x.Product.IsTaxable)
+            taxAmount = Cart.Where(x => x.Product.IsTaxable)
                 .Sum(x => x.Product.RetailPrice * x.QuantityInCart * taxRate);
             //foreach (var item in Cart)
             //{
@@ -164,6 +167,7 @@ namespace DesktopUI.ViewModels
             NotifyOfPropertyChange(()=> SubTotal);
             NotifyOfPropertyChange(() => Tax);
             NotifyOfPropertyChange(() => Total);
+            NotifyOfPropertyChange(() => CanCheckOut);
 
         }
 
@@ -188,6 +192,7 @@ namespace DesktopUI.ViewModels
             NotifyOfPropertyChange(() => SubTotal);
             NotifyOfPropertyChange(() => Tax);
             NotifyOfPropertyChange(() => Total);
+            NotifyOfPropertyChange(() => CanRemoveFromCart);
         }
 
         public bool CanRemoveFromCart
@@ -201,8 +206,19 @@ namespace DesktopUI.ViewModels
 
         }
 
-        public void CheckOut()
+        public async Task CheckOut()
         {
+            //Create a Sale Model and post to API
+            SaleModel sale = new SaleModel();
+            foreach (var item in Cart)
+            {
+                sale.SaleDetails.Add(new SaleDetailModel
+                {
+                    ProductId = item.Product.Id,
+                   Quantity=item.QuantityInCart
+                }) ;
+            }
+            await _saleEndPoint.PostSale(sale);
 
         }
 
@@ -212,6 +228,10 @@ namespace DesktopUI.ViewModels
             {
                 bool output = false;
                 //make sure there is something in the cart
+                if (Cart.Count>0)
+                {
+                    output = true;
+                }
                 return output;
             }
 

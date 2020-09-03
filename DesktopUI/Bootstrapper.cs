@@ -28,7 +28,8 @@ namespace DesktopUI
         protected override void Configure()
         {
             _container.Instance(_container)
-                .PerRequest<IProductEndPoint, ProductEndPoint>();
+                .PerRequest<IProductEndPoint, ProductEndPoint>()
+                .PerRequest<ISaleEndpoint,SaleEndpoint>();
             _container.
                 Singleton<IWindowManager, WindowManager>()
                 .Singleton<IEventAggregator, EventAggregator>()
