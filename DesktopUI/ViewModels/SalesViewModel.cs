@@ -33,6 +33,16 @@ namespace DesktopUI.ViewModels
             base.OnViewLoaded(view);
             await LoadProducts();
         }
+        private async Task  ResetSalesViewModel()
+        {
+            Cart = new BindingList<CartItemDisplayModel>();
+            await LoadProducts();
+            NotifyOfPropertyChange(() => SubTotal);
+            NotifyOfPropertyChange(() => Tax);
+            NotifyOfPropertyChange(() => Total);
+            NotifyOfPropertyChange(() => CanCheckOut);
+
+        }
         private async Task LoadProducts()
         {
             var productList = await _productEndPoint.GetAll();
@@ -218,7 +228,8 @@ namespace DesktopUI.ViewModels
             NotifyOfPropertyChange(() => SubTotal);
             NotifyOfPropertyChange(() => Tax);
             NotifyOfPropertyChange(() => Total);
-            NotifyOfPropertyChange(() => CanRemoveFromCart);
+            NotifyOfPropertyChange(() => CanCheckOut);
+            NotifyOfPropertyChange(() => CanAddToCart);
         }
 
         public bool CanRemoveFromCart
@@ -248,6 +259,7 @@ namespace DesktopUI.ViewModels
                 }) ;
             }
             await _saleEndPoint.PostSale(sale);
+            await ResetSalesViewModel();
 
         }
 
