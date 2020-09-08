@@ -38,34 +38,37 @@ namespace DataManager.Library.DataAccess
                 details.Add(detail);
             }
                 //Create the Sale DB model
-                SaleDBModel sale = new SaleDBModel
-                {
-                    SubTotal = details.Sum(x => x.PurchasePrice),
-                    Tax= details.Sum(x => x.Tax),
-                    CashierId=cashierId
-                };
-                sale.Total = sale.SubTotal + sale.Tax;
-
-                //Save the Sale Model
-                SqlDataAccess sql = new SqlDataAccess();
-                sql.SaveData("dbo.spSale_Insert", sale, "Data");
-
-            //Get the id from sale model
-            sale.Id=sql.LoadData<int, dynamic>("spSale_Lookup", new { sale.CashierId,sale.SaleDate }, "Data").FirstOrDefault();
-
-            // Finish filling in the sale detail model
-            foreach (var item in details)
+            SaleDBModel sale = new SaleDBModel
             {
-                item.SaleId = sale.Id;
-                sql.SaveData("dbo.spSaleDetail_Insert", item, "Data");
+                SubTotal = details.Sum(x => x.PurchasePrice),
+                Tax= details.Sum(x => x.Tax),
+                CashierId=cashierId
+            };
+            sale.Total = sale.SubTotal + sale.Tax;
+
+            using(SqlDataAccess sql = new SqlDataAccess())
+            {
+                try
+                {
+                    sql.StartTransaction("Data");
+                    //Save the sale model
+                    sql.SaveDataInTransaction("dbo.spSale_Insert", sale);
+                    sale.Id = sql.LoadDataInTransaction<int, dynamic>("spSale_Lookup", new { sale.CashierId, sale.SaleDate }).FirstOrDefault();
+
+                    // Finish filling in the sale detail model
+                    foreach (var item in details)
+                    {
+                        item.SaleId = sale.Id;
+                        sql.SaveDataInTransaction("dbo.spSaleDetail_Insert", item);
+                    }
+                    sql.CommitTransaction();
+                }
+                catch
+                {
+                    sql.RollbackTransaction();
+                    throw;
+                }
             }
-            
-
-
-
-
-
-
 
         }
 
